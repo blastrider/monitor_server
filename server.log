@@ -1,0 +1,20 @@
+[2025-01-01 00:19:10][monitor_server][INFO] Logging initialized successfully
+[2025-01-01 00:19:10][monitor_server][INFO] Starting the Actix Web server on 127.0.0.1:8080
+[2025-01-01 00:19:10][actix_server::builder][INFO] starting 16 workers
+[2025-01-01 00:19:10][actix_server::server][INFO] Actix runtime found; starting in Actix runtime
+[2025-01-01 00:19:10][actix_server::server][INFO] starting service: "actix-web-service-127.0.0.1:8080", workers: 16, listening on: 127.0.0.1:8080
+[2025-01-01 00:19:24][monitor_server][INFO] Starting to gather system status
+[2025-01-01 00:19:24][monitor_server][INFO] Retrieved hostname: nanakin-skyrunner
+[2025-01-01 00:19:24][monitor_server][INFO] System version: Manjaro Linux
+[2025-01-01 00:19:24][monitor_server][INFO] Docker containers retrieved: 2
+[2025-01-01 00:19:24][monitor_server][INFO] Service sshd is active
+[2025-01-01 00:19:24][monitor_server][INFO] SSH active: true
+[2025-01-01 00:19:24][monitor_server][INFO] Status page rendered successfully
+[2025-01-01 00:19:58][monitor_server][INFO] Starting to gather system status
+[2025-01-01 00:19:58][monitor_server][INFO] Retrieved hostname: nanakin-skyrunner
+[2025-01-01 00:19:58][monitor_server][INFO] System version: Manjaro Linux
+[2025-01-01 00:19:58][monitor_server][INFO] Docker containers retrieved: 2
+[2025-01-01 00:19:58][monitor_server][ERROR] Failed to check SSH service status.
+
+[2025-01-01 00:19:58][monitor_server][INFO] SSH active: false
+[2025-01-01 00:19:58][monitor_server][INFO] Status page rendered successfully
