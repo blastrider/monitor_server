@@ -27,6 +27,30 @@ L'interface est construite en HTML avec des styles sobres pour une lisibilité o
 - **Interface web** :
   - Interface propre et responsive avec une mise en page basée sur `flexbox`.
 
+# Dernières modifications
+
+## Nouvelles fonctionnalités ajoutées
+
+### Informations sur le noyau :
+
+- Ajout de la fonction `get_kernel_version` pour récupérer la version du noyau à l'aide de la commande `uname -r`.
+- Affichage des informations du noyau dans l'interface utilisateur sous la section "Kernel".
+
+### Durée d'activité (Uptime) :
+
+- Ajout de la fonction `get_uptime` pour calculer et afficher la durée depuis le dernier démarrage en lisant `/proc/uptime`.
+- Les données sont formatées en jours, heures, minutes et secondes pour une meilleure lisibilité.
+
+### Adresses IP :
+
+- Ajout de la fonction `get_ip_addresses` pour récupérer l'adresse IP privée et publique de la machine.
+- Ces informations sont affichées dans l'interface utilisateur sous la section "Network".
+
+### Amélioration de l'interface HTML :
+
+- Ajout d'une section dédiée pour afficher l'uptime.
+- Mise à jour des styles CSS pour maintenir une présentation claire.
+
 ## Dépendances
 
 - **Rust et Cargo** : Assurez-vous d'avoir Rust installé sur votre système. Pour cela, visitez [https://www.rust-lang.org/](https://www.rust-lang.org/).
