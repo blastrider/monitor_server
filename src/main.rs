@@ -1,3 +1,4 @@
+use get_if_addrs::get_if_addrs;
 use std::{ffi::CString, fs, process::Command};
 
 use actix_web::{web, HttpResponse, HttpServer, Responder};
@@ -6,6 +7,7 @@ use bollard::{container::ListContainersOptions, Docker};
 use chrono::{Datelike, Local};
 use fern::Dispatch;
 use log::{debug, error, info, warn};
+use reqwest::Client;
 use serde::Serialize;
 
 // Définition des erreurs possibles
@@ -18,6 +20,7 @@ enum SystemError {
     SSHStatusCheckFailed,
     DockerConnectionFailed,
     DockerListContainersFailed,
+    UptimeUnavailable,
 }
 
 impl SystemError {
@@ -30,6 +33,7 @@ impl SystemError {
             Self::SSHStatusCheckFailed => "Failed to check SSH service status.",
             Self::DockerConnectionFailed => "Failed to connect to Docker.",
             Self::DockerListContainersFailed => "Failed to list Docker containers.",
+            Self::UptimeUnavailable => "Failed to retrieve uptime information.",
         }
     }
 }
@@ -44,8 +48,11 @@ struct ContainerStatus {
 // Template HTML pour la page de statut
 #[derive(Template)]
 #[template(path = "status.html")]
+
 struct StatusTemplate {
     hostname: String,
+    system_version: String,
+    uptime: String,
     memory_used: String,
     memory_total: String,
     disk_available: String,
@@ -56,9 +63,55 @@ struct StatusTemplate {
     containers: Vec<ContainerStatus>,
     ssh_active: bool,
     current_year: u32,
-    system_version: String,
+    local_ip: String,
+    public_ip: String,
+    kernel_info: String,
 }
 
+fn get_kernel_version() -> String {
+    std::process::Command::new("uname")
+        .arg("-r")
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .map(|version| version.trim().to_string()) // Supprimer les espaces inutiles
+        .unwrap_or_else(|| "Unknown Kernel".to_string())
+}
+
+// Fonction pour obtenir les adresses IP (privée et publique)
+async fn get_ip_addresses() -> Result<(String, String), SystemError> {
+    // Récupérer l'IP privée
+    let private_ip = match get_if_addrs() {
+        Ok(interfaces) => interfaces
+            .into_iter()
+            .find_map(|iface| {
+                if !iface.is_loopback() {
+                    match iface.addr {
+                        get_if_addrs::IfAddr::V4(addr) => Some(addr.ip.to_string()),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| "Unknown".to_string()),
+        Err(_) => "Unknown".to_string(),
+    };
+
+    // Récupérer l'IP publique (asynchrone)
+    let client = Client::new();
+    let public_ip = match client.get("https://api.ipify.org").send().await {
+        Ok(response) => match response.text().await {
+            Ok(ip) => ip,
+            Err(_) => "Unknown".to_string(),
+        },
+        Err(_) => "Unknown".to_string(),
+    };
+
+    Ok((private_ip, public_ip))
+}
+
+// Récupérer la version du système
 fn get_system_version() -> String {
     fs::read_to_string("/etc/os-release")
         .ok()
@@ -70,6 +123,30 @@ fn get_system_version() -> String {
                 .map(|value| value.trim_matches('"').to_string())
         })
         .unwrap_or_else(|| "Unknown System".to_string())
+}
+
+// Fonction pour récupérer le temps de fonctionnement
+fn get_uptime() -> Result<String, SystemError> {
+    fs::read_to_string("/proc/uptime")
+        .map_err(|_| {
+            error!("{}", SystemError::UptimeUnavailable.message());
+            SystemError::UptimeUnavailable
+        })
+        .and_then(|content| {
+            let mut parts = content.split_whitespace();
+            if let Some(uptime_seconds) = parts.next().and_then(|s| s.parse::<f64>().ok()) {
+                let days = (uptime_seconds / 86400.0).floor() as u64;
+                let hours = ((uptime_seconds % 86400.0) / 3600.0).floor() as u64;
+                let minutes = ((uptime_seconds % 3600.0) / 60.0).floor() as u64;
+                Ok(format!(
+                    "{} days, {} hours, {} minutes",
+                    days, hours, minutes
+                ))
+            } else {
+                warn!("Uptime format invalid in /proc/uptime");
+                Err(SystemError::UptimeUnavailable)
+            }
+        })
 }
 
 // Fonction pour initialiser les journaux
@@ -93,7 +170,6 @@ fn init_logging() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-// Fonction principale pour renvoyer la page HTML
 async fn get_status() -> impl Responder {
     info!("Starting to gather system status");
     let hostname = hostname::get()
@@ -101,8 +177,14 @@ async fn get_status() -> impl Responder {
         .unwrap_or_else(|_| "Unknown".to_string());
     info!("Retrieved hostname: {}", hostname);
 
+    let kernel_version = get_kernel_version();
+    info!("Kernel version: {}", kernel_version);
+
     let system_version = get_system_version();
     info!("System version: {}", system_version);
+
+    let uptime = get_uptime().unwrap_or_else(|_| "Unknown".to_string());
+    info!("Uptime: {}", uptime);
 
     let memory_info = get_memory_info().unwrap_or((0, 0));
     debug!(
@@ -129,13 +211,31 @@ async fn get_status() -> impl Responder {
     info!("Docker containers retrieved: {}", containers.len());
 
     let ssh_active = is_ssh_active();
-    info!("SSH active: {}", ssh_active);
+    if ssh_active {
+        info!("SSH service is active");
+    } else {
+        warn!("SSH service is inactive");
+    }
+
+    let ip_addresses = get_ip_addresses()
+        .await
+        .unwrap_or(("Unknown".to_string(), "Unknown".to_string()));
+    info!(
+        "Local IP: {}, Public IP: {}",
+        ip_addresses.0, ip_addresses.1
+    );
+    debug!(
+        "Local IP: {}, Public IP: {}",
+        ip_addresses.0, ip_addresses.1
+    );
 
     let current_year = Local::now().year() as u32;
 
     let template = StatusTemplate {
         hostname,
         system_version,
+        kernel_info: kernel_version,
+        uptime,
         memory_used: format_size(memory_info.0),
         memory_total: format_size(memory_info.1),
         disk_available: format_size(disk_info.0),
@@ -146,6 +246,8 @@ async fn get_status() -> impl Responder {
         containers,
         ssh_active,
         current_year,
+        local_ip: ip_addresses.0,
+        public_ip: ip_addresses.1,
     };
 
     match template.render() {
@@ -361,7 +463,6 @@ async fn get_containers() -> Vec<ContainerStatus> {
         }
     }
 }
-
 #[actix_web::main]
 async fn main() -> tokio::io::Result<()> {
     init_logging().expect("Failed to initialize logging");

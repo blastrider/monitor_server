@@ -90,6 +90,8 @@
             <div class="flex-item">
                 <h2>System</h2>
                 <p><strong>Version:</strong> {{ system_version }}</p>
+                <p><strong>Uptime:</strong> {{ uptime }}</p>
+                <p><strong>Kernel Version:</strong> {{ kernel_info }}</p>
             </div>
             <div class="flex-item">
                 <h2>Memory</h2>
@@ -129,6 +131,12 @@
                     {% endfor %}
                 </ul>
             </div>
+            <div class="flex-item">
+                <h2>IP Addresses</h2>
+                <p><strong>Local IP:</strong> {{ local_ip }}</p>
+                <p><strong>Public IP:</strong> {{ public_ip }}</p>
+            </div>
+            
         </div>
     </div>
     <footer>
