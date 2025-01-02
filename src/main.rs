@@ -1,6 +1,7 @@
 use get_if_addrs::get_if_addrs;
 use std::{ffi::CString, fs, process::Command};
 
+use actix_web::middleware::{Logger, NormalizePath, TrailingSlash};
 use actix_web::{web, HttpResponse, HttpServer, Responder};
 use askama::Template;
 use bollard::{container::ListContainersOptions, Docker};
@@ -152,8 +153,8 @@ fn get_uptime() -> Result<String, SystemError> {
 // Fonction pour initialiser les journaux
 fn init_logging() -> Result<(), fern::InitError> {
     Dispatch::new()
-        .level(log::LevelFilter::Info)
-        .level_for("actix_web", log::LevelFilter::Info)
+        .level(log::LevelFilter::Debug)
+        .level_for("actix_web", log::LevelFilter::Debug)
         .chain(std::io::stdout())
         .chain(fern::log_file("server.log")?)
         .format(|out, message, record| {
@@ -170,12 +171,19 @@ fn init_logging() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-async fn get_status() -> impl Responder {
+async fn get_status(req: actix_web::HttpRequest) -> impl Responder {
     info!("Starting to gather system status");
     let hostname = hostname::get()
         .map(|h| h.to_string_lossy().into_owned())
         .unwrap_or_else(|_| "Unknown".to_string());
     info!("Retrieved hostname: {}", hostname);
+
+    let forwarded_for = req
+    .headers()
+    .get("X-Forwarded-For")
+    .and_then(|v| v.to_str().ok())
+    .unwrap_or("Unknown");
+info!("Client IP (X-Forwarded-For): {}", forwarded_for);
 
     let kernel_version = get_kernel_version();
     info!("Kernel version: {}", kernel_version);
@@ -464,12 +472,17 @@ async fn get_containers() -> Vec<ContainerStatus> {
     }
 }
 #[actix_web::main]
-async fn main() -> tokio::io::Result<()> {
+async fn main() -> std::io::Result<()> {
     init_logging().expect("Failed to initialize logging");
 
-    info!("Starting the Actix Web server on 127.0.0.1:8080");
-    HttpServer::new(|| actix_web::App::new().route("/status", web::get().to(get_status)))
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
+    info!("Starting the Actix Web server on 127.0.0.1:8550");
+    HttpServer::new(|| {
+        actix_web::App::new()
+            .wrap(Logger::default()) // Ajoute des logs pour les requêtes
+            .wrap(NormalizePath::new(TrailingSlash::Trim)) // Normalise les chemins
+            .route("/status", web::get().to(get_status)) // Route principale
+    })
+    .bind("127.0.0.1:8550")? // Actix écoute sur 127.0.0.1:8550
+    .run()
+    .await
 }
