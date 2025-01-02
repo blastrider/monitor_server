@@ -28,7 +28,13 @@ L'interface est construite en HTML avec des styles sobres pour une lisibilité o
   - Interface propre et responsive avec une mise en page basée sur `flexbox`.
 
 
+## A venir
+
+### synchronisation avec api OVH
+
 ## Dernières modifications
+
+### Scinde le main.rs
 
 ### Prise en charge des proxys (Nginx)
 
