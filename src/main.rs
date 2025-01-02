@@ -340,13 +340,15 @@ fn get_disk_info(path: &str) -> Result<(u64, u64), SystemError> {
 // Fonction pour obtenir la température moyenne
 fn get_temperature() -> Result<String, SystemError> {
     let entries = fs::read_dir("/sys/class/thermal/").map_err(|_| {
-        warn!(
-            "{}
-",
-            SystemError::TemperatureSensorsUnavailable.message()
-        );
+        warn!("Temperature sensors directory not found. This may be a VM environment.");
         SystemError::TemperatureSensorsUnavailable
-    })?;
+    });
+
+    // Si le répertoire n'est pas disponible, retourne une valeur par défaut
+    let entries = match entries {
+        Ok(e) => e,
+        Err(_) => return Ok("Unavailable (VM environment)".to_string()),
+    };
 
     let temperatures: Vec<f64> = entries
         .flatten()
@@ -359,18 +361,15 @@ fn get_temperature() -> Result<String, SystemError> {
         .collect();
 
     if temperatures.is_empty() {
-        warn!(
-            "{}
-",
-            SystemError::TemperatureSensorsUnavailable.message()
-        );
-        Err(SystemError::TemperatureSensorsUnavailable)
+        warn!("No temperature data found in /sys/class/thermal/. Returning default value.");
+        Ok("Unavailable (VM environment)".to_string())
     } else {
         let avg_temp = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
         debug!("Average temperature calculated: {:.2} °C", avg_temp);
         Ok(format!("{:.2} °C", avg_temp))
     }
 }
+
 
 // Fonction pour obtenir le trafic réseau
 fn get_network_traffic() -> Result<(u64, u64), SystemError> {
