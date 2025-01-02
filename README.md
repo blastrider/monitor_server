@@ -27,9 +27,18 @@ L'interface est construite en HTML avec des styles sobres pour une lisibilité o
 - **Interface web** :
   - Interface propre et responsive avec une mise en page basée sur `flexbox`.
 
-# Dernières modifications
 
-## Nouvelles fonctionnalités ajoutées
+## Dernières modifications
+
+### Prise en charge des proxys (Nginx)
+
+- Ajout d'un middleware pour normaliser les chemins d'URL et gérer les en-têtes transmis par les proxys (`X-Forwarded-For`, `X-Forwarded-Proto`).
+- Modification de la fonction `get_status` pour utiliser les en-têtes HTTP afin de récupérer et afficher l'adresse IP réelle du client (provenant de `X-Forwarded-For`).
+
+### Journalisation des requêtes
+
+- Intégration d'un middleware `Logger` pour journaliser les requêtes HTTP entrantes, facilitant le débogage et le suivi des accès.
+
 
 ### Informations sur le noyau :
 
