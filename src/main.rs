@@ -8,7 +8,7 @@ use actix_web::{
     web, App, HttpServer,
 };
 use config::init_logging;
-use handlers::status::get_status;
+use handlers::status::{get_service_status, get_status};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,6 +19,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(NormalizePath::new(TrailingSlash::Trim))
             .route("/status", web::get().to(get_status))
+            .route("/status/{service}", web::get().to(get_service_status))
     })
     .bind("127.0.0.1:8550")?
     .run()
