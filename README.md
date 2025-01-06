@@ -27,13 +27,25 @@ L'interface est construite en HTML avec des styles sobres pour une lisibilité o
 - **Interface web** :
   - Interface propre et responsive avec une mise en page basée sur `flexbox`.
 
-
 ## A venir
 
+- un vrai path pour config
+- l'emplacement status.html à renseigner dans la configuration
+
 ### synchronisation avec api OVH
+
 test
 
 ## Dernières modifications
+
+### API et fichier de confguration
+
+- Ajout de la route dynamique /status/{service} pour vérifier l'état des services via l'API.
+- Gestion des statuts HTTP :
+  - 200 OK pour les services actifs.
+  - 500 Internal Server Error pour les services inactifs.
+- Amélioration des logs pour suivre les appels API.
+  Le ficher de configuration est à mettre à coté du binaire, mais prochainement patché
 
 ### Scinde le main.rs
 
@@ -45,7 +57,6 @@ test
 ### Journalisation des requêtes
 
 - Intégration d'un middleware `Logger` pour journaliser les requêtes HTTP entrantes, facilitant le débogage et le suivi des accès.
-
 
 ### Informations sur le noyau :
 
@@ -129,7 +140,36 @@ test
 - **Interface utilisateur** :
   - Les données collectées sont rendues dynamiquement dans une page HTML grâce à `Askama`.
 
+## API de vérification des services
+
+**Route : /status/{service}**
+
+Cette route permet de vérifier l'état d'un service spécifique en renvoyant un code HTTP correspondant à son statut.
+
+- Code 200 : Le service est actif.
+- Code 500 : Le service est inactif.
+
 ## Exemples d'utilisation
+
+- **curl pour statut SSH (actif) et Nginx (inactif)** :
+
+  Service actif :
+
+  ```bash
+  curl -i http://127.0.0.1:8080/status/ssh
+  Réponse :
+  HTTP/1.1 200 OK
+  Service 'ssh' is active
+  ```
+
+  Service inactif :
+
+  ```bash
+  curl -i http://127.0.0.1:8080/status/nginx
+  Réponse :
+  HTTP/1.1 500 Internal Server Error
+  Service 'nginx' is not active
+  ```
 
 - **Vérification rapide du statut SSH** :
   - La section SSH montre si le service est actif avec une indication visuelle (texte vert ou rouge).
