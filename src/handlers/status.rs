@@ -1,11 +1,20 @@
+use crate::{
+    models::{errors::SystemError, templates::StatusTemplate},
+    services::{
+        docker::get_containers,
+        hardware::{
+            get_disk_info, get_kernel_version, get_memory_info, get_network_traffic,
+            get_system_version, get_temperature, get_uptime,
+        },
+        service_checker::{check_services, load_services_from_config},
+    },
+};
 use actix_web::{HttpResponse, Responder};
 use askama::Template;
 use chrono::{Datelike, Local};
-use log::{debug, error, info, warn};
-use reqwest::Client;
-use crate::{models::{errors::SystemError, templates::StatusTemplate}, services::{docker::get_containers, hardware::{get_disk_info, get_kernel_version, get_memory_info, get_network_traffic, get_system_version, get_temperature, get_uptime, is_ssh_active}}};
 use get_if_addrs::get_if_addrs;
-
+use log::{debug, error, info};
+use reqwest::Client;
 
 pub async fn get_status(req: actix_web::HttpRequest) -> impl Responder {
     info!("Starting to gather system status");
@@ -15,11 +24,11 @@ pub async fn get_status(req: actix_web::HttpRequest) -> impl Responder {
     info!("Retrieved hostname: {}", hostname);
 
     let forwarded_for = req
-    .headers()
-    .get("X-Forwarded-For")
-    .and_then(|v| v.to_str().ok())
-    .unwrap_or("Unknown");
-info!("Client IP (X-Forwarded-For): {}", forwarded_for);
+        .headers()
+        .get("X-Forwarded-For")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("Unknown");
+    info!("Client IP (X-Forwarded-For): {}", forwarded_for);
 
     let kernel_version = get_kernel_version();
     info!("Kernel version: {}", kernel_version);
@@ -54,11 +63,24 @@ info!("Client IP (X-Forwarded-For): {}", forwarded_for);
     let containers = get_containers().await;
     info!("Docker containers retrieved: {}", containers.len());
 
-    let ssh_active = is_ssh_active();
-    if ssh_active {
-        info!("SSH service is active");
-    } else {
-        warn!("SSH service is inactive");
+    // Vérification des services
+    let all_services = load_services_from_config("services.toml"); // Charge tous les services du fichier
+    let active_services = check_services("services.toml");
+
+    let services_status = all_services
+        .iter()
+        .map(|service| (service.clone(), active_services.contains(service)))
+        .collect();
+
+    let inactive_services: Vec<String> = all_services
+        .clone()
+        .into_iter()
+        .filter(|service| !active_services.contains(service))
+        .collect();
+
+    info!("{:?} services are active", active_services);
+    if !inactive_services.is_empty() {
+        info!("{:?} services are inactive", inactive_services);
     }
 
     let ip_addresses = get_ip_addresses()
@@ -88,10 +110,10 @@ info!("Client IP (X-Forwarded-For): {}", forwarded_for);
         network_in: format_size(network_traffic.0),
         network_out: format_size(network_traffic.1),
         containers,
-        ssh_active,
         current_year,
         local_ip: ip_addresses.0,
         public_ip: ip_addresses.1,
+        services_status,
     };
 
     match template.render() {

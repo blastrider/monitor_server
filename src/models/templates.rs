@@ -16,7 +16,7 @@ pub struct StatusTemplate {
     pub network_in: String,
     pub network_out: String,
     pub containers: Vec<ContainerStatus>,
-    pub ssh_active: bool,
+    pub services_status: Vec<(String, bool)>, // (nom du service, actif ou non)
     pub current_year: u32,
     pub local_ip: String,
     pub public_ip: String,
@@ -27,3 +27,9 @@ pub struct ContainerStatus {
     pub image: String,
     pub state: String,
 }
+// Méthode d'aide pour vérifier si un service est actif
+/* impl StatusTemplate {
+    pub fn is_active(&self, service: &str) -> bool {
+        self.active_services.contains(&service.to_string())
+    }
+} */

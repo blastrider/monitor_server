@@ -57,20 +57,14 @@
             margin-bottom: 0.5rem;
         }
 
-        .flex-item p {
-            margin: 0.5rem 0;
-        }
-
-        .ssh-active {
+        .active {
             color: #008000;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
-        .ssh-inactive {
+        .inactive {
             color: #ff0000;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         footer {
@@ -78,6 +72,15 @@
             margin-top: 2rem;
             font-size: 0.9rem;
             color: #666;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 0.5rem 0;
         }
     </style>
 </head>
@@ -87,42 +90,55 @@
     </header>
     <div class="container">
         <div class="flexbox">
+            <!-- System Info -->
             <div class="flex-item">
                 <h2>System</h2>
                 <p><strong>Version:</strong> {{ system_version }}</p>
                 <p><strong>Uptime:</strong> {{ uptime }}</p>
                 <p><strong>Kernel Version:</strong> {{ kernel_info }}</p>
             </div>
+            
+            <!-- Memory Info -->
             <div class="flex-item">
                 <h2>Memory</h2>
                 <p><strong>Used:</strong> {{ memory_used }}</p>
                 <p><strong>Total:</strong> {{ memory_total }}</p>
             </div>
+
+            <!-- Disk Info -->
             <div class="flex-item">
                 <h2>Disk</h2>
                 <p><strong>Available:</strong> {{ disk_available }}</p>
                 <p><strong>Total:</strong> {{ disk_total }}</p>
             </div>
+
+            <!-- Network Traffic -->
             <div class="flex-item">
                 <h2>Network</h2>
                 <p><strong>Incoming Traffic:</strong> {{ network_in }}</p>
                 <p><strong>Outgoing Traffic:</strong> {{ network_out }}</p>
             </div>
+
+            <!-- Temperature -->
             <div class="flex-item">
                 <h2>Temperature</h2>
                 <p><strong>Average:</strong> {{ temperature }}</p>
             </div>
+
+            <!-- Services Status -->
             <div class="flex-item">
-                <h2>SSH</h2>
-                <p>
-                    <strong>Status:</strong>
-                    {% if ssh_active %}
-                        <span class="ssh-active">Active</span>
-                    {% else %}
-                        <span class="ssh-inactive">Inactive</span>
-                    {% endif %}
-                </p>
+                <h2>Services</h2>
+                <ul>
+                    {% for (service, is_active) in services_status %}
+                        <li class="{% if is_active %}active{% else %}inactive{% endif %}">
+                            {{ service }} - {% if is_active %}Active{% else %}Inactive{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                        
             </div>
+
+            <!-- Docker Containers -->
             <div class="flex-item">
                 <h2>Containers</h2>
                 <ul>
@@ -131,12 +147,13 @@
                     {% endfor %}
                 </ul>
             </div>
+
+            <!-- IP Addresses -->
             <div class="flex-item">
                 <h2>IP Addresses</h2>
                 <p><strong>Local IP:</strong> {{ local_ip }}</p>
                 <p><strong>Public IP:</strong> {{ public_ip }}</p>
             </div>
-            
         </div>
     </div>
     <footer>

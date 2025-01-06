@@ -1,0 +1,2 @@
+# Liste des services à vérifier
+services = ["sshd", "nginx"]

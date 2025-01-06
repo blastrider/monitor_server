@@ -1,6 +1,6 @@
-use std::{ffi::CString, fs};
 use crate::models::errors::SystemError;
 use log::{error, warn};
+use std::{ffi::CString, fs};
 
 pub fn get_system_version() -> String {
     fs::read_to_string("/etc/os-release")
@@ -132,33 +132,17 @@ pub fn get_network_traffic() -> Result<(u64, u64), SystemError> {
         .map(|line| {
             let parts: Vec<&str> = line.split_whitespace().collect();
             Ok((
-                parts.get(1).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0),
-                parts.get(9).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0),
+                parts
+                    .get(1)
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(0),
+                parts
+                    .get(9)
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(0),
             ))
         })
         .try_fold((0, 0), |(rx_total, tx_total), result| {
             result.map(|(rx, tx)| (rx_total + rx, tx_total + tx))
         })
-}
-
-pub fn is_ssh_active() -> bool {
-    let services = ["ssh", "sshd"];
-    for service in &services {
-        match std::process::Command::new("systemctl")
-            .arg("is-active")
-            .arg(service)
-            .output()
-        {
-            Ok(output) => {
-                if String::from_utf8_lossy(&output.stdout).trim() == "active" {
-                    return true;
-                }
-            }
-            Err(_) => {
-                warn!("Failed to check status of service {}", service);
-            }
-        }
-    }
-
-    false
 }

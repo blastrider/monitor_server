@@ -3,7 +3,10 @@ mod handlers;
 mod models;
 mod services;
 
-use actix_web::{middleware::{Logger, NormalizePath, TrailingSlash}, web, App, HttpServer};
+use actix_web::{
+    middleware::{Logger, NormalizePath, TrailingSlash},
+    web, App, HttpServer,
+};
 use config::init_logging;
 use handlers::status::get_status;
 
