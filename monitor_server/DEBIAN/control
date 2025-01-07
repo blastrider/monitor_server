@@ -1,0 +1,7 @@
+Package: monitor-server
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Maxime Guillemin <guimaxali@gmail.com>
+Description: Web service to monitor Linux Servers
