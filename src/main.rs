@@ -1,25 +1,29 @@
 mod config;
 mod handlers;
 mod models;
+mod security;
 mod services;
 
-use actix_web::{
-    middleware::{Logger, NormalizePath, TrailingSlash},
-    web, App, HttpServer,
-};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use config::init_logging;
 use handlers::status::{get_service_status, get_status};
+use security::{auth::AuthMiddleware, htaccess::load_htpasswd};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let htpasswd = load_htpasswd("/etc/monitor_server/htpasswd");
     init_logging().expect("Failed to initialize logging");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .wrap(NormalizePath::new(TrailingSlash::Trim))
-            .route("/status", web::get().to(get_status))
-            .route("/status/{service}", web::get().to(get_service_status))
+            /* .wrap(NormalizePath::new(TrailingSlash::Trim)) */
+            .wrap(AuthMiddleware::new(htpasswd.clone()))
+            .route("/status", web::get().to(get_status)) // Statut système
+            .route(
+                "/status/{service}",
+                web::get().to(get_service_status), // Statut d'un service spécifique
+            )
     })
     .bind("127.0.0.1:8550")?
     .run()
