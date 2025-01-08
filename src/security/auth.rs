@@ -9,19 +9,17 @@ use base64::Engine;
 use futures_util::future::{ok, LocalBoxFuture, Ready};
 use htpasswd_verify::Htpasswd;
 use log::{debug, info};
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::task::{Context, Poll}; // Importation des macros de logging
+use std::task::{Context, Poll};
+use std::{collections::HashMap, sync::Arc}; // Importation des macros de logging
 
 pub struct AuthMiddleware {
-    htpasswd: Rc<HashMap<String, String>>,
+    htpasswd: Arc<HashMap<String, String>>, // Utilisation de Arc
 }
 
 impl AuthMiddleware {
-    pub fn new(htpasswd: HashMap<String, String>) -> Self {
-        Self {
-            htpasswd: Rc::new(htpasswd),
-        }
+    pub fn new(htpasswd: Arc<HashMap<String, String>>) -> Self {
+        // Accepter Arc
+        Self { htpasswd }
     }
 }
 
@@ -38,15 +36,15 @@ where
 
     fn new_transform(&self, service: S) -> Self::Future {
         ok(AuthMiddlewareService {
-            service: Rc::new(service),
-            htpasswd: Rc::clone(&self.htpasswd),
+            service: Arc::new(service),           // Remplacer Rc par Arc
+            htpasswd: Arc::clone(&self.htpasswd), // Utiliser Arc::clone
         })
     }
 }
 
 pub struct AuthMiddlewareService<S> {
-    service: Rc<S>,
-    htpasswd: Rc<HashMap<String, String>>,
+    service: Arc<S>,                        // Remplacer Rc par Arc
+    htpasswd: Arc<HashMap<String, String>>, // Utilisation de Arc
 }
 
 impl<S, B> Service<ServiceRequest> for AuthMiddlewareService<S>
@@ -63,8 +61,8 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let service = Rc::clone(&self.service);
-        let htpasswd = Rc::clone(&self.htpasswd);
+        let service = Arc::clone(&self.service); // Utiliser Arc::clone
+        let htpasswd = Arc::clone(&self.htpasswd); // Utiliser Arc::clone
 
         Box::pin(async move {
             debug!("Processing request: {}", req.path());

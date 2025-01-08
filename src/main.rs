@@ -8,17 +8,17 @@ use actix_web::{middleware::Logger, web, App, HttpServer};
 use config::init_logging;
 use handlers::status::{get_service_status, get_status};
 use security::{auth::AuthMiddleware, htaccess::load_htpasswd};
+use std::sync::Arc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let htpasswd = load_htpasswd("/etc/monitor_server/htpasswd");
+    let htpasswd = Arc::new(load_htpasswd("/etc/monitor_server/htpasswd"));
     init_logging().expect("Failed to initialize logging");
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            /* .wrap(NormalizePath::new(TrailingSlash::Trim)) */
-            .wrap(AuthMiddleware::new(htpasswd.clone()))
+            .wrap(AuthMiddleware::new(Arc::clone(&htpasswd))) // Pas de duplication réelle
             .route("/status", web::get().to(get_status)) // Statut système
             .route(
                 "/status/{service}",
