@@ -14,12 +14,14 @@ use std::rc::Rc;
 use std::task::{Context, Poll}; // Importation des macros de logging
 
 pub struct AuthMiddleware {
-    htpasswd: HashMap<String, String>,
+    htpasswd: Rc<HashMap<String, String>>,
 }
 
 impl AuthMiddleware {
     pub fn new(htpasswd: HashMap<String, String>) -> Self {
-        Self { htpasswd }
+        Self {
+            htpasswd: Rc::new(htpasswd),
+        }
     }
 }
 
@@ -37,14 +39,14 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ok(AuthMiddlewareService {
             service: Rc::new(service),
-            htpasswd: self.htpasswd.clone(),
+            htpasswd: Rc::clone(&self.htpasswd),
         })
     }
 }
 
 pub struct AuthMiddlewareService<S> {
     service: Rc<S>,
-    htpasswd: HashMap<String, String>,
+    htpasswd: Rc<HashMap<String, String>>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuthMiddlewareService<S>
@@ -62,7 +64,7 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
-        let htpasswd = self.htpasswd.clone();
+        let htpasswd = Rc::clone(&self.htpasswd);
 
         Box::pin(async move {
             debug!("Processing request: {}", req.path());
