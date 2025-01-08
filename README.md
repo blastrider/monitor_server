@@ -38,6 +38,14 @@ test
 
 ## Dernières modifications
 
+### Authentification par htpasswd
+
+- Mise en place d'un middleware pour sécuriser les routes avec une authentification basique.
+- Utilisation de la fonction load_htpasswd pour charger les utilisateurs et mots de passe depuis un fichier htpasswd.
+- Comparaison des identifiants fournis avec les mots de passe hachés stockés dans htpasswd.
+- Intégration de logs pour suivre les étapes d'authentification.
+- fonctionne avec l'outil htaccess d'apache pour générer le fichier ( dans /etc/monitor_server/htpasswd )
+
 ### API et fichier de confguration
 
 - Ajout de la route dynamique /status/{service} pour vérifier l'état des services via l'API.
