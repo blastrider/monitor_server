@@ -4,7 +4,6 @@ use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse},
     Error, HttpResponse,
 };
-
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use futures_util::future::{ok, LocalBoxFuture, Ready};
@@ -70,7 +69,6 @@ where
                     let parts: Vec<&str> = auth_str.split_whitespace().collect();
                     if parts.len() == 2 && parts[0] == "Basic" {
                         if let Ok(decoded) = STANDARD.decode(parts[1]) {
-                            // Utilisation du moteur STANDARD pour décoder
                             if let Ok(credentials) = String::from_utf8(decoded) {
                                 let mut split = credentials.splitn(2, ':');
                                 let username = split.next().unwrap_or("");
@@ -92,7 +90,7 @@ where
 
             let response = req.into_response(
                 HttpResponse::Unauthorized()
-                    .append_header(("WWW-Authenticate", r#"Basic realm="Restricted""#))
+                    .append_header(("WWW-Authenticate", r#"Basic realm=\"Restricted\""#))
                     .finish()
                     .map_into_right_body(),
             );
