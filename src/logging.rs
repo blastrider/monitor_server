@@ -4,7 +4,7 @@ use log::info;
 
 pub fn init_logging() -> Result<(), fern::InitError> {
     Dispatch::new()
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
         .chain(std::io::stdout())
         .chain(fern::log_file("server.log")?)
         .format(|out, message, record| {
