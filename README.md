@@ -38,6 +38,10 @@ test
 
 ## Dernières modifications
 
+### Adaptation du système de configuration  
+- Ajout des champs `log_level`, `log_file` et `services_path` dans `config.rs` pour configurer le niveau de log, le fichier de logs, et l'emplacement de `services.toml`.  
+- Mise à jour de `logging.rs` et `status.rs` pour utiliser les valeurs de configuration définies dans `config.toml`.  
+
 ### Authentification par htpasswd
 
 - Mise en place d'un middleware pour sécuriser les routes avec une authentification basique.
