@@ -4,7 +4,10 @@ mod models;
 mod security;
 mod services;
 
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{
+    middleware::{Logger, NormalizePath, TrailingSlash},
+    web, App, HttpServer,
+};
 use config::init_logging;
 use handlers::status::{get_service_status, get_status};
 use security::{auth::AuthMiddleware, htaccess::load_htpasswd};
@@ -18,6 +21,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(NormalizePath::new(TrailingSlash::Trim))
             .wrap(AuthMiddleware::new(Arc::clone(&htpasswd))) // Pas de duplication réelle
             .route("/status", web::get().to(get_status)) // Statut système
             .route(
@@ -25,7 +29,7 @@ async fn main() -> std::io::Result<()> {
                 web::get().to(get_service_status), // Statut d'un service spécifique
             )
     })
-    .bind("127.0.0.1:8550")?
+    .bind("0.0.0.0:8550")?
     .run()
     .await
 }

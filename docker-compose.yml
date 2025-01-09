@@ -2,12 +2,12 @@ version: "3.8"
 
 services:
   monitor_server:
-    image: monitor_server
+    image: monitor_server:latest
     container_name: monitor_server
-    ports:
-      - "8550:8550"
     volumes:
       - ./htpasswd:/etc/monitor_server/htpasswd:ro # Monte le fichier htpasswd
+    networks:
+      - monitor_network
 
   nginx:
     image: nginx:latest
