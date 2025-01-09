@@ -1,2 +1,2 @@
 # Liste des services à vérifier
-services = ["sshd", "nginx"]
+services = ["ssh", "nginx"]

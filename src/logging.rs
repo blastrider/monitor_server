@@ -1,12 +1,21 @@
 use chrono::Local;
 use fern::Dispatch;
-use log::info;
+use log::{info, LevelFilter};
+use crate::config::Config;
 
-pub fn init_logging() -> Result<(), fern::InitError> {
+pub fn init_logging(config: &Config) -> Result<(), fern::InitError> {
+    let log_level = match config.log_level.to_lowercase().as_str() {
+        "debug" => LevelFilter::Debug,
+        "info" => LevelFilter::Info,
+        "warn" => LevelFilter::Warn,
+        "error" => LevelFilter::Error,
+        _ => LevelFilter::Info, // Valeur par défaut si invalide
+    };
+
     Dispatch::new()
-        .level(log::LevelFilter::Info)
+        .level(log_level)
         .chain(std::io::stdout())
-        .chain(fern::log_file("server.log")?)
+        .chain(fern::log_file(&config.log_file)?)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{}][{}][{}] {}",
@@ -17,6 +26,7 @@ pub fn init_logging() -> Result<(), fern::InitError> {
             ))
         })
         .apply()?;
-    info!("Logging initialized successfully");
+
+    info!("Logging initialized successfully with level: {}", config.log_level);
     Ok(())
 }

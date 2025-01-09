@@ -15,8 +15,10 @@ use chrono::{Datelike, Local};
 use get_if_addrs::get_if_addrs;
 use log::{debug, error, info};
 use reqwest::Client;
+use crate::config::Config;
 
 pub async fn get_service_status(path: web::Path<String>) -> impl Responder<Body = BoxBody> {
+    
     let service = path.into_inner();
     if is_service_active(&service) {
         HttpResponse::Ok().body(format!("Service '{}' is active", service))
@@ -26,6 +28,7 @@ pub async fn get_service_status(path: web::Path<String>) -> impl Responder<Body 
 }
 
 pub async fn get_status(req: actix_web::HttpRequest) -> impl Responder<Body = BoxBody> {
+    let config = Config::from_file("config").expect("Failed to load configuration");
     info!("Starting to gather system status");
     let hostname = hostname::get()
         .map(|h| h.to_string_lossy().into_owned())
@@ -73,8 +76,8 @@ pub async fn get_status(req: actix_web::HttpRequest) -> impl Responder<Body = Bo
     info!("Docker containers retrieved: {}", containers.len());
 
     // Vérification des services
-    let all_services = load_services_from_config("services.toml"); // Charge tous les services du fichier
-    let active_services = check_services("services.toml");
+    let all_services = load_services_from_config(&config.services_path);
+    let active_services = check_services(&config.services_path);
 
     let services_status = all_services
         .iter()

@@ -1,0 +1,19 @@
+# Fichier optionnel pour surcharger les valeurs par défaut
+
+# Adresse IP du serveur
+server_address = "127.0.0.1"
+
+# Port du serveur
+server_port = 8080
+
+# Chemin vers le fichier htpasswd
+htpasswd_path = "./htpasswd"
+
+# Chemin vers le fichier services.toml
+services_path = "./services.toml"
+
+# Niveau de log (debug, info, warn, error)
+log_level = "debug"
+
+# Chemin du fichier de logs
+log_file = "/var/log/monitor_server/server.log"

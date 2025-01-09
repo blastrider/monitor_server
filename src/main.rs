@@ -1,3 +1,4 @@
+mod config;
 mod logging;
 mod handlers;
 mod models;
@@ -15,21 +16,20 @@ use std::sync::Arc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let htpasswd = Arc::new(load_htpasswd("/etc/monitor_server/htpasswd"));
-    init_logging().expect("Failed to initialize logging");
+    let config = config::Config::from_file("config").expect("Failed to load configuration");
+
+    let htpasswd = Arc::new(load_htpasswd(&config.htpasswd_path));
+    init_logging(&config).expect("Failed to initialize logging");
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .wrap(NormalizePath::new(TrailingSlash::Trim))
-            .wrap(AuthMiddleware::new(Arc::clone(&htpasswd))) // Pas de duplication réelle
-            .route("/status", web::get().to(get_status)) // Statut système
-            .route(
-                "/status/{service}",
-                web::get().to(get_service_status), // Statut d'un service spécifique
-            )
+            .wrap(AuthMiddleware::new(Arc::clone(&htpasswd)))
+            .route("/status", web::get().to(get_status))
+            .route("/status/{service}", web::get().to(get_service_status))
     })
-    .bind("0.0.0.0:8550")?
+    .bind(format!("{}:{}", config.server_address, config.server_port))?
     .run()
     .await
 }
