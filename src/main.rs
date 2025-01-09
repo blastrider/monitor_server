@@ -1,4 +1,4 @@
-mod config;
+mod logging;
 mod handlers;
 mod models;
 mod security;
@@ -8,7 +8,7 @@ use actix_web::{
     middleware::{Logger, NormalizePath, TrailingSlash},
     web, App, HttpServer,
 };
-use config::init_logging;
+use logging::init_logging;
 use handlers::status::{get_service_status, get_status};
 use security::{auth::AuthMiddleware, htaccess::load_htpasswd};
 use std::sync::Arc;
